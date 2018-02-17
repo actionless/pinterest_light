@@ -20,19 +20,24 @@
         console.log(`Error: ${error}`);
     }
 
+    function handlePinterestTabRemoved(tabId, removeInfo) {
+        if (pinterestTabsIDs[tabId]) {
+            delete pinterestTabsIDs[tabId];
+        }
+    }
+
     function handlePinterestTabUpdated(tabId, changeInfo, tabInfo) {
 
         function markCountryChosen(countryPrefix) {
             countryChosen = countryPrefix;
             delete pinterestTabsIDs[tabId];
-            if (pinterestTabsIDs.length === 0) {
+            if (Object.keys(pinterestTabsIDs).length === 0) {
                 console.log('REMOVE LISTENER');
                 browser.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
+                browser.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
             }
         }
 
-        //console.log(pinterestTabsIDs);
-        //console.log(changeInfo);
         if (pinterestTabsIDs[tabId]) {
             if (!countryChosen) {
                 if (changeInfo.url) {
@@ -70,6 +75,7 @@
         if (!browser.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
             console.log('ADD LISTENER');
             browser.tabs.onUpdated.addListener(handlePinterestTabUpdated);
+            browser.tabs.onRemoved.addListener(handlePinterestTabRemoved);
         }
     }
 
