@@ -6,8 +6,6 @@
     //chrome.browserAction.setBadgeText({text: '(ツ)'});
     //chrome.browserAction.setBadgeBackgroundColor({color: '#eae'});
 
-    //https://nl.pinterest.com/pin/find/?url=https%3A%2F%2Fexample.com%2Ffoobar%2F
-    //const baseURL = "https://nl.pinterest.com/pin/find/?url=";
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
     const pinterestURLTemplate = ".pinterest.com/pin/find/?url=";
@@ -89,7 +87,10 @@
         }
     }
 
-    chrome.browserAction.onClicked.addListener(function(aTab) {
+    //chrome.browserAction.onClicked.addListener(function(aTab) {
+        //browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+    //});
+    chrome.pageAction.onClicked.addListener(function(aTab) {
         browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
     });
 
