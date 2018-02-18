@@ -9,7 +9,7 @@
 			"48": "icons/icon.png",
 			"96": "icons/icon@2x.png"
 		},
-		"_show_matches": ["http://*/*", "https://*/*"]
+		"show_matches": ["http://*/*", "https://*/*"]
 	},
 
 	"permissions": ["activeTab", "tabs", "declarativeContent"],
