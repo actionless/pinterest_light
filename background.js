@@ -2,6 +2,8 @@
 (function () {
     'use strict';
 
+    const debug = false;
+
     /*global chrome:false */
     //chrome.browserAction.setBadgeText({text: '(ツ)'});
     //chrome.browserAction.setBadgeBackgroundColor({color: '#eae'});
@@ -13,9 +15,12 @@
     var pinterestTabsIDs = {};
     var countryChosen = false;
 
+    function debugLog(message) {
+        if (debug) console.warn(message);
+    }
 
     function onError(error) {
-        console.log(`Error: ${error}`);
+        console.error(`Error: ${error}`);
     }
 
     function handlePinterestTabRemoved(tabId, removeInfo) {
@@ -30,7 +35,7 @@
             countryChosen = countryPrefix;
             delete pinterestTabsIDs[tabId];
             if (Object.keys(pinterestTabsIDs).length === 0) {
-                console.log('REMOVE LISTENER');
+                debugLog('REMOVE LISTENER');
                 chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
                 chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
             }
@@ -49,14 +54,14 @@
                         markCountryChosen(countryPrefix);
                     }
                 } else if (changeInfo.status === 'complete') {
-                    console.log(tabInfo);
-                    console.log("[pinterest_light] Country change doesn't needed.");
+                    debugLog(tabInfo);
+                    debugLog("[pinterest_light] Country change doesn't needed.");
                     markCountryChosen(defaultCountryPrefix);
                 }
             } else {
                 let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
                 if (countryPrefix !== countryChosen) {
-                    console.log(`[pinterest_light:${tabId}] Changing country to ALREADY SELECTED "${countryChosen}"...`);
+                    debugLog(`[pinterest_light:${tabId}] Changing country to ALREADY SELECTED "${countryChosen}"...`);
                     chrome.tabs.update(tabId, {
                         'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId]
                     });
@@ -67,11 +72,11 @@
     }
 
     function pinterestTabCreated(tab) {
-        console.log('foo:');
-        console.log(tab);
+        console.log(`Going to pin ${tab.title}`);
+        debugLog(tab);
         pinterestTabsIDs[tab.id] = tab.title;
         if (!chrome.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
-            console.log('ADD LISTENER');
+            debugLog('ADD LISTENER');
             chrome.tabs.onUpdated.addListener(handlePinterestTabUpdated);
             chrome.tabs.onRemoved.addListener(handlePinterestTabRemoved);
         }
