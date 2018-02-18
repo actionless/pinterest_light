@@ -31,8 +31,8 @@
             delete pinterestTabsIDs[tabId];
             if (Object.keys(pinterestTabsIDs).length === 0) {
                 console.log('REMOVE LISTENER');
-                browser.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
-                browser.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
+                chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
+                chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
             }
         }
 
@@ -42,7 +42,7 @@
                     let countryPrefix = new URL(changeInfo.url).hostname.split('.')[0];
                     if (countryPrefix !== defaultCountryPrefix) {
                         baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
-                        browser.tabs.update(tabId, {
+                        chrome.tabs.update(tabId, {
                             'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId]
                         });
                         console.log(`[pinterest_light:${tabId}] Changing country to "${countryPrefix}"...`);
@@ -57,7 +57,7 @@
                 let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
                 if (countryPrefix !== countryChosen) {
                     console.log(`[pinterest_light:${tabId}] Changing country to ALREADY SELECTED "${countryChosen}"...`);
-                    browser.tabs.update(tabId, {
+                    chrome.tabs.update(tabId, {
                         'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId]
                     });
                     markCountryChosen(countryChosen);
@@ -70,10 +70,10 @@
         console.log('foo:');
         console.log(tab);
         pinterestTabsIDs[tab.id] = tab.title;
-        if (!browser.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
+        if (!chrome.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
             console.log('ADD LISTENER');
-            browser.tabs.onUpdated.addListener(handlePinterestTabUpdated);
-            browser.tabs.onRemoved.addListener(handlePinterestTabRemoved);
+            chrome.tabs.onUpdated.addListener(handlePinterestTabUpdated);
+            chrome.tabs.onRemoved.addListener(handlePinterestTabRemoved);
         }
     }
 
@@ -81,17 +81,40 @@
         let tab = tabs[0]; // Safe to assume there will only be one result
         let encodedURL = encodeURIComponent(tab.url);
         let resultURL = baseURL + encodedURL;
-        let newTabPromise = browser.tabs.create({'url': resultURL, 'active': true});
+        let newTabCallback;
         if (!countryChosen) {
-            newTabPromise.then(pinterestTabCreated, onError);
+            newTabCallback = pinterestTabCreated;
         }
+        chrome.tabs.create({'url': resultURL, 'active': true}, newTabCallback);
     }
 
     //chrome.browserAction.onClicked.addListener(function(aTab) {
         //browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
     //});
     chrome.pageAction.onClicked.addListener(function(aTab) {
-        browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+        chrome.tabs.query({currentWindow: true, active: true}, foundActiveTabs);
     });
+
+
+    // When the extension is installed or upgraded ...
+    chrome.runtime.onInstalled.addListener(function() {
+      // Replace all rules ...
+      chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+        // With a new rule ...
+        chrome.declarativeContent.onPageChanged.addRules([
+          {
+            // That fires when a page's URL contains a 'g' ...
+            conditions: [
+              new chrome.declarativeContent.PageStateMatcher({
+                pageUrl: { schemes: ['http', 'https'] },
+              })
+            ],
+            // And shows the extension's page action.
+            actions: [ new chrome.declarativeContent.ShowPageAction() ]
+          }
+        ]);
+      });
+    });
+
 
 }());

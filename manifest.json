@@ -2,30 +2,17 @@
 	"manifest_version": 2,
 	"name": "pinterest_light",
 	"version": "0.1",
-	"applications": {
-		"gecko": {
-			"id": "pinterest_light@mozilla.org"
-		}
-	},
-
-	"_browser_action": {
-		"default_title": "Pinterest Button light",
-		"default_icon": {
-			"48": "icons/icon.png",
-			"96": "icons/icon@2x.png"
-		}
-	},
 
 	"page_action": {
 		"default_title": "Pinterest Button light",
 		"default_icon": {
-			"19": "icons/icon.png",
-			"38": "icons/icon@2x.png"
+			"48": "icons/icon.png",
+			"96": "icons/icon@2x.png"
 		},
-		"show_matches": ["http://*/*", "https://*/*"]
+		"_show_matches": ["http://*/*", "https://*/*"]
 	},
 
-	"permissions": ["activeTab", "tabs"],
+	"permissions": ["activeTab", "tabs", "declarativeContent"],
 	"background": {
 		"scripts": ["background.js"],
 		"persistent": false
