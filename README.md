@@ -1,2 +1,2 @@
-# pinterest_light firefox extension
+# pinterest_light firefox/chrome extension
 A lightweight pinterest button WebExtension.
