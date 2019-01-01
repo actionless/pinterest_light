@@ -4,5 +4,7 @@ IFS=$'\n\t'
 
 XPI_NAME=pinterest_light.xpi
 
-rm ${XPI_NAME}
-7z a ${XPI_NAME} manifest.json background.js icons
+if [[ -f "$XPI_NAME" ]] ; then
+	rm "$XPI_NAME"
+fi
+7z a "$XPI_NAME" manifest.json background.js icons

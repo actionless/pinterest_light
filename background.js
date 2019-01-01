@@ -5,8 +5,6 @@
     const debug = false;
 
     /*global chrome:false */
-    //chrome.browserAction.setBadgeText({text: '(ツ)'});
-    //chrome.browserAction.setBadgeBackgroundColor({color: '#eae'});
 
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
@@ -93,34 +91,20 @@
         chrome.tabs.create({'url': resultURL, 'active': true}, newTabCallback);
     }
 
-    //chrome.browserAction.onClicked.addListener(function(aTab) {
-        //browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
-    //});
-    chrome.pageAction.onClicked.addListener(function(aTab) {
-        chrome.tabs.query({currentWindow: true, active: true}, foundActiveTabs);
-    });
-
-
-    // if we're running on Google Chrome / Chromium:
-    if (chrome.declarativeContent) {
-        // When the extension is installed or upgraded ...
-        chrome.runtime.onInstalled.addListener(function() {
-          // Replace all rules ...
-          chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-            // With a new rule ...
-            chrome.declarativeContent.onPageChanged.addRules([
-              {
-                conditions: [
-                  new chrome.declarativeContent.PageStateMatcher({
-                    pageUrl: { schemes: ['http', 'https'] },
-                  })
-                ],
-                // And shows the extension's page action.
-                actions: [ new chrome.declarativeContent.ShowPageAction() ]
-              }
-            ]);
-          });
+    function handleBrowserNewTab(activeInfo) {
+        browser.tabs.get(activeInfo.tabId).then(tab => {
+            if (['http:', 'https:'].includes(new URL(tab.url).protocol)) {
+                chrome.browserAction.enable();
+            } else {
+                chrome.browserAction.disable();
+            }
         });
     }
+
+    chrome.tabs.onActivated.addListener(handleBrowserNewTab);
+
+    chrome.browserAction.onClicked.addListener(function(aTab) {
+        browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+    });
 
 }());
