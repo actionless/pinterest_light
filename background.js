@@ -91,17 +91,28 @@
         chrome.tabs.create({'url': resultURL, 'active': true}, newTabCallback);
     }
 
-    function handleBrowserNewTab(activeInfo) {
+    function handleNewURL(url) {
+        if (['http:', 'https:'].includes(new URL(url).protocol)) {
+            chrome.browserAction.enable();
+        } else {
+            chrome.browserAction.disable();
+        }
+    }
+
+    function handleBrowserTabChange(activeInfo) {
         browser.tabs.get(activeInfo.tabId).then(tab => {
-            if (['http:', 'https:'].includes(new URL(tab.url).protocol)) {
-                chrome.browserAction.enable();
-            } else {
-                chrome.browserAction.disable();
-            }
+            handleNewURL(tab.url);
         });
     }
 
-    chrome.tabs.onActivated.addListener(handleBrowserNewTab);
+    function handleBrowserURLChange(tabId, changeInfo, tab) {
+        if (changeInfo.url) {
+            handleNewURL(changeInfo.url);
+        }
+    }
+
+    chrome.tabs.onActivated.addListener(handleBrowserTabChange);
+    chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
 
     chrome.browserAction.onClicked.addListener(function(aTab) {
         browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
