@@ -5,6 +5,7 @@
     const debug = false;
 
     /*global chrome:false */
+    var browser = browser || null;
 
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
@@ -100,9 +101,15 @@
     }
 
     function handleBrowserTabChange(activeInfo) {
-        browser.tabs.get(activeInfo.tabId).then(tab => {
-            handleNewURL(tab.url);
-        });
+        if (browser) {
+            browser.tabs.get(activeInfo.tabId).then(tab => {
+                handleNewURL(tab.url);
+            });
+        } else {
+            chrome.tabs.get(activeInfo.tabId, tab => {
+                handleNewURL(tab.url);
+            });
+        }
     }
 
     function handleBrowserURLChange(tabId, changeInfo, tab) {
@@ -115,7 +122,17 @@
     chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
 
     chrome.browserAction.onClicked.addListener(function(aTab) {
-        browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+        if (browser) {
+            browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+        } else {
+            chrome.tabs.query({currentWindow: true, active: true}, tabs => {
+                try{
+                    foundActiveTabs(tabs);
+                } catch (error) {
+                    onError(error);
+                }
+            });
+        }
     });
 
 }());
