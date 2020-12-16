@@ -43,7 +43,7 @@
 
     // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
 
-    function handlePinterestCountryCheckRemoved(tabId, removeInfo) {
+    function handlePinterestCountryCheckRemoved(tabId, _removeInfo) {
         if (pinterestTabsIDs[tabId]) {
             delete pinterestTabsIDs[tabId];
         }
@@ -54,8 +54,13 @@
 
         debugLog(`[pinterest_light:${tabId}] tab changed:`);
         debugLog(changeInfo);
+
         if (!(pinterestTabsIDs[tabId])) {
             debugLog(`[pinterest_light:${tabId}] tab isn't registered`);
+            return;
+        }
+        if (tabInfo.url === 'about:blank') {
+            debugLog(`[pinterest_light:${tabId}] tab seems to be still loading`);
             return;
         }
 
@@ -79,13 +84,14 @@
                         'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId].pinterestURL
                     });
                 } else {
-                    debugLog(`[pinterest_light:${tabId}] Country is already selected: "${defaultCountryPrefix}"...`);
+                    debugLog(`[pinterest_light:${tabId}] Country seems to be already selected: "${defaultCountryPrefix}", ` +
+                             `but we don't know yet if it's a final redirect.`);
                 }
             } else if (changeInfo.status === 'complete') {
                 countryChosen = new URL(tabInfo.url).hostname.split('.')[0];
                 debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}". Saving...`);
             }
-        } else if (tabInfo.url!=='about:blank') {
+        } else {
             let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
             if (countryPrefix !== countryChosen) {
                 debugLog(`[pinterest_light:${tabId}] Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
@@ -141,7 +147,7 @@
         }
     }
 
-    function handleBrowserURLChange(tabId, changeInfo, tab) {
+    function handleBrowserURLChange(tabId, changeInfo, _tab) {
         if (changeInfo.url) {
             handleNewURL(changeInfo.url);
         }
