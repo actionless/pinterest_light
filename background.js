@@ -32,13 +32,13 @@
     function doSearch(tabId, queryURL) {
         debugLog(`[pinterest_light:${tabId}] Do search for ${queryURL}`);
         (browser || chrome).tabs.executeScript(tabId, {
-            code: `alert("test01");
-                console.log('location:', window.location.href);
-        `});
+            file: "/content.js"
+        });
     }
 
     function handlePinterestCountryCheckUpdated(tabId, changeInfo, tabInfo) {
 
+        debugLog(`[pinterest_light:${tabId}] tab changed:`);
         debugLog(changeInfo);
 
         function _onPageLoadCompleted() {
@@ -69,11 +69,9 @@
                     debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}". Saving...`);
                 }
             } else if (tabInfo.url!=='about:blank') {
-                debugLog(tabInfo.url);
                 let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
-                debugLog([countryPrefix, countryChosen]);
                 if (countryPrefix !== countryChosen) {
-                    debugLog(`[pinterest_light:${tabId}] Changing country to ALREADY SELECTED "${countryChosen}"...`);
+                    debugLog(`[pinterest_light:${tabId}] Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
                     chrome.tabs.update(tabId, {
                         'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId].pinterestURL
                     });
