@@ -2,6 +2,8 @@
 (function () {
     'use strict';
 
+
+
     //const debug = false;
     const debug = true;
 
@@ -23,11 +25,9 @@
         console.error(`Error: ${error}`);
     }
 
-    function handlePinterestCountryCheckRemoved(tabId, removeInfo) {
-        if (pinterestTabsIDs[tabId]) {
-            delete pinterestTabsIDs[tabId];
-        }
-    }
+
+
+    // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     function doSearch(tabId, queryURL) {
         debugLog(`[pinterest_light:${tabId}] Do search for ${queryURL}`);
@@ -39,10 +39,25 @@
         });
     }
 
+
+
+    // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
+
+    function handlePinterestCountryCheckRemoved(tabId, removeInfo) {
+        if (pinterestTabsIDs[tabId]) {
+            delete pinterestTabsIDs[tabId];
+        }
+    }
+
+
     function handlePinterestCountryCheckUpdated(tabId, changeInfo, tabInfo) {
 
         debugLog(`[pinterest_light:${tabId}] tab changed:`);
         debugLog(changeInfo);
+        if (!(pinterestTabsIDs[tabId])) {
+            debugLog(`[pinterest_light:${tabId}] tab isn't registered`);
+            return;
+        }
 
         function _onPageLoadCompleted() {
             doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
@@ -54,58 +69,57 @@
             }
         }
 
-        if (pinterestTabsIDs[tabId]) {
-            if (!countryChosen) {
-                if (changeInfo.url) {
-                    let countryPrefix = new URL(changeInfo.url).hostname.split('.')[0];
-                    if (countryPrefix !== defaultCountryPrefix) {
-                        baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
-                        console.log(`[pinterest_light:${tabId}] Changing country to "${countryPrefix}"...`);
-                        chrome.tabs.update(tabId, {
-                            'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId].pinterestURL
-                        });
-                    } else {
-                        debugLog(`[pinterest_light:${tabId}] Country is already selected: "${defaultCountryPrefix}"...`);
-                    }
-                } else if (changeInfo.status === 'complete') {
-                    countryChosen = new URL(tabInfo.url).hostname.split('.')[0];
-                    debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}". Saving...`);
-                }
-            } else if (tabInfo.url!=='about:blank') {
-                let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
-                if (countryPrefix !== countryChosen) {
-                    debugLog(`[pinterest_light:${tabId}] Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
+        if (!countryChosen) {
+            if (changeInfo.url) {
+                let countryPrefix = new URL(changeInfo.url).hostname.split('.')[0];
+                if (countryPrefix !== defaultCountryPrefix) {
+                    baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
+                    console.log(`[pinterest_light:${tabId}] Changing country to "${countryPrefix}"...`);
                     chrome.tabs.update(tabId, {
-                        'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId].pinterestURL
+                        'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId].pinterestURL
                     });
                 } else {
-                    debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}"...`);
+                    debugLog(`[pinterest_light:${tabId}] Country is already selected: "${defaultCountryPrefix}"...`);
                 }
-                if (changeInfo.status === "complete") {
-                    _onPageLoadCompleted();
-                }
+            } else if (changeInfo.status === 'complete') {
+                countryChosen = new URL(tabInfo.url).hostname.split('.')[0];
+                debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}". Saving...`);
+            }
+        } else if (tabInfo.url!=='about:blank') {
+            let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
+            if (countryPrefix !== countryChosen) {
+                debugLog(`[pinterest_light:${tabId}] Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
+                chrome.tabs.update(tabId, {
+                    'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId].pinterestURL
+                });
+            } else {
+                debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}"...`);
+            }
+            if (changeInfo.status === "complete") {
+                _onPageLoadCompleted();
             }
         }
     }
 
-    function checkPinterestCountry(tab, searchURL) {
-        debugLog('Check language:');
-        pinterestTabsIDs[tab.id] = {'pinterestURL': tab.title, 'searchURL': searchURL};
-        if (!chrome.tabs.onUpdated.hasListener(handlePinterestCountryCheckUpdated)) {
-            debugLog('ADD LISTENER');
-            chrome.tabs.onUpdated.addListener(handlePinterestCountryCheckUpdated);
-            chrome.tabs.onRemoved.addListener(handlePinterestCountryCheckRemoved);
-        }
+
+    function searchCurrentTabURLonPinterest(tabs) {
+        let currentTab = tabs[0]; // Safe to assume there will only be one result
+        const searchURL = currentTab.url;
+        debugLog(`Found active tabs: ${searchURL}`);
+        chrome.tabs.create({'url': baseURL, 'active': true}, newTab => {
+            debugLog('Check language:');
+            pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, 'searchURL': searchURL};
+            if (!chrome.tabs.onUpdated.hasListener(handlePinterestCountryCheckUpdated)) {
+                debugLog('ADD LISTENER');
+                chrome.tabs.onUpdated.addListener(handlePinterestCountryCheckUpdated);
+                chrome.tabs.onRemoved.addListener(handlePinterestCountryCheckRemoved);
+            }
+        });
     }
 
-    function foundActiveTabs(tabs) {
-        let tab = tabs[0]; // Safe to assume there will only be one result
-        debugLog(`Found active tabs: ${tab.url}`);
-        let newTabCallback = (newTab) => {
-            checkPinterestCountry(newTab, tab.url);
-        }
-        chrome.tabs.create({'url': baseURL, 'active': true}, newTabCallback);
-    }
+
+
+    // Handlers for extension button status: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     function handleNewURL(url) {
         if (['http:', 'https:'].includes(new URL(url).protocol)) {
@@ -133,21 +147,29 @@
         }
     }
 
+
+
+    // Actual event listeners: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     chrome.tabs.onActivated.addListener(handleBrowserTabChange);
     chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
 
     chrome.browserAction.onClicked.addListener(function(aTab) {
         if (browser) {
-            browser.tabs.query({currentWindow: true, active: true}).then(foundActiveTabs, onError);
+            browser.tabs.query({currentWindow: true, active: true}).then(
+                searchCurrentTabURLonPinterest, onError
+            );
         } else {
             chrome.tabs.query({currentWindow: true, active: true}, tabs => {
                 try{
-                    foundActiveTabs(tabs);
+                    searchCurrentTabURLonPinterest(tabs);
                 } catch (error) {
                     onError(error);
                 }
             });
         }
     });
+
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 }());
