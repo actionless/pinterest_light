@@ -29,7 +29,17 @@
         }
     }
 
+    function doSearch(tabId, queryURL) {
+        debugLog(`[pinterest_light:${tabId}] Do search for ${queryURL}`);
+        (browser || chrome).tabs.executeScript(tabId, {
+            code: `alert("test01");
+                console.log('location:', window.location.href);
+        `});
+    }
+
     function handlePinterestCountryCheckUpdated(tabId, changeInfo, tabInfo) {
+
+        debugLog(changeInfo);
 
         function markCountryChosen(countryPrefix, searchURL) {
             countryChosen = countryPrefix;
@@ -48,20 +58,20 @@
                     let countryPrefix = new URL(changeInfo.url).hostname.split('.')[0];
                     if (countryPrefix !== defaultCountryPrefix) {
                         baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
+                        console.log(`[pinterest_light:${tabId}] Changing country to "${countryPrefix}"...`);
                         chrome.tabs.update(tabId, {
                             'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId].pinterestURL
                         });
-                        console.log(`[pinterest_light:${tabId}] Changing country to "${countryPrefix}"...`);
-                        markCountryChosen(countryPrefix, pinterestTabsIDs[tabId].searchURL);
+                    } else {
+                        debugLog(`[pinterest_light:${tabId}] Country is already selected: "${defaultCountryPrefix}"...`);
                     }
                 } else if (changeInfo.status === 'complete') {
-                    debugLog(tabInfo);
-                    debugLog("[pinterest_light] Country change doesn't needed.");
-                    markCountryChosen(defaultCountryPrefix, pinterestTabsIDs[tabId].searchURL);
+                    countryChosen = new URL(tabInfo.url).hostname.split('.')[0];
+                    debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}". Saving...`);
                 }
-            } else {
+            } else if (tabInfo.url!=='about:blank') {
                 debugLog(tabInfo.url);
-                let countryPrefix = new URL(pinterestProto + pinterestTabsIDs[tabId].pinterestURL).hostname.split('.')[0];
+                let countryPrefix = new URL(tabInfo.url).hostname.split('.')[0];
                 debugLog([countryPrefix, countryChosen]);
                 if (countryPrefix !== countryChosen) {
                     debugLog(`[pinterest_light:${tabId}] Changing country to ALREADY SELECTED "${countryChosen}"...`);
@@ -71,7 +81,9 @@
                 } else {
                     debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}"...`);
                 }
-                markCountryChosen(countryChosen, pinterestTabsIDs[tabId].searchURL);
+                if (changeInfo.status === "complete") {
+                    markCountryChosen(countryChosen, pinterestTabsIDs[tabId].searchURL);
+                }
             }
         }
     }
@@ -84,10 +96,6 @@
             chrome.tabs.onUpdated.addListener(handlePinterestCountryCheckUpdated);
             chrome.tabs.onRemoved.addListener(handlePinterestCountryCheckRemoved);
         }
-    }
-
-    function doSearch(tabId, queryURL) {
-        debugLog(`Do search for ${queryURL}: ${tabId}`);
     }
 
     function foundActiveTabs(tabs) {

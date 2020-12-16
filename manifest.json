@@ -11,7 +11,11 @@
 		}
 	},
 
-	"permissions": ["activeTab", "tabs"],
+	"permissions": [
+		"activeTab",
+		"tabs",
+		"*://*.pinterest.com/pin-builder/*"
+	],
 	"background": {
 		"scripts": ["background.js"]
 	}
