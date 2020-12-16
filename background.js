@@ -33,7 +33,7 @@
         debugLog(`[pinterest_light:${tabId}] Do search for ${queryURL}`);
         (browser || chrome).tabs.executeScript(tabId, {
             code: `
-                alert(\`Search for ${queryURL}\`);
+                alert("Search for ${queryURL}");
                 console.log('location:', window.location.href);
             `
         });
