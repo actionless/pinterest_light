@@ -41,14 +41,13 @@
 
         debugLog(changeInfo);
 
-        function markCountryChosen(countryPrefix, searchURL) {
-            countryChosen = countryPrefix;
+        function _onPageLoadCompleted() {
+            doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
             delete pinterestTabsIDs[tabId];
             if (Object.keys(pinterestTabsIDs).length === 0) {
                 debugLog('REMOVE LISTENER');
                 chrome.tabs.onUpdated.removeListener(handlePinterestCountryCheckUpdated);
                 chrome.tabs.onRemoved.removeListener(handlePinterestCountryCheckRemoved);
-                doSearch(tabId, searchURL);
             }
         }
 
@@ -82,7 +81,7 @@
                     debugLog(`[pinterest_light:${tabId}] Country is already selected: "${countryChosen}"...`);
                 }
                 if (changeInfo.status === "complete") {
-                    markCountryChosen(countryChosen, pinterestTabsIDs[tabId].searchURL);
+                    _onPageLoadCompleted();
                 }
             }
         }
