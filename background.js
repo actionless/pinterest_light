@@ -21,10 +21,6 @@
         if (debug) console.warn(message);
     }
 
-    function onError(error) {
-        console.error(`Error: ${error}`);
-    }
-
 
 
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
