@@ -108,12 +108,11 @@
     }
 
 
-    function searchCurrentTabURLonPinterest(tabs) {
-        let currentTab = tabs[0]; // Safe to assume there will only be one result
+    function searchCurrentTabURLonPinterest(currentTab) {
         const searchURL = currentTab.url;
         debugLog(`Found active tabs: ${searchURL}`);
         chrome.tabs.create({'url': baseURL, 'active': true}, newTab => {
-            debugLog('Check language:');
+            debugLog('Gonna wait for pinterest tab and check selected country:');
             pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, 'searchURL': searchURL};
             if (!chrome.tabs.onUpdated.hasListener(handlePinterestCountryCheckUpdated)) {
                 debugLog('ADD LISTENER');
@@ -160,20 +159,8 @@
     chrome.tabs.onActivated.addListener(handleBrowserTabChange);
     chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
 
-    chrome.browserAction.onClicked.addListener(function(aTab) {
-        if (browser) {
-            browser.tabs.query({currentWindow: true, active: true}).then(
-                searchCurrentTabURLonPinterest, onError
-            );
-        } else {
-            chrome.tabs.query({currentWindow: true, active: true}, tabs => {
-                try{
-                    searchCurrentTabURLonPinterest(tabs);
-                } catch (error) {
-                    onError(error);
-                }
-            });
-        }
+    chrome.browserAction.onClicked.addListener(function(tab) {
+        searchCurrentTabURLonPinterest(tab);
     });
 
     // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
