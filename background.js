@@ -21,9 +21,9 @@
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
     const pinterestURLTemplate = ".pinterest.com/pin-builder/";
-    var baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate;
-    var pinterestTabsIDs = {};
-    var countryChosen = false;
+    let baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate;
+    let pinterestTabsIDs = {};
+    let countryChosen = false;
 
     function getCountryPrefix(url) {
         return new URL(url).hostname.split('.')[0];
@@ -47,14 +47,25 @@
 
     // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
 
-    function handlePinterestCountryCheckRemoved(tabId, _removeInfo) {
+    function handlePinterestPageLoadCompleted(tabId) {
+        doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
+        delete pinterestTabsIDs[tabId];
+        if (Object.keys(pinterestTabsIDs).length === 0) {
+            debugLog('REMOVE LISTENER');
+            chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
+            chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
+        }
+    }
+
+
+    function handlePinterestTabRemoved(tabId, _removeInfo) {
         if (pinterestTabsIDs[tabId]) {
             delete pinterestTabsIDs[tabId];
         }
     }
 
 
-    function handlePinterestCountryCheckUpdated(tabId, changeInfo, tabInfo) {
+    function handlePinterestTabUpdated(tabId, changeInfo, tabInfo) {
 
         debugLogTab(tabId, `tab changed:`);
         debugLog(changeInfo);
@@ -68,45 +79,34 @@
             return;
         }
 
-        function _onPageLoadCompleted() {
-            doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
-            delete pinterestTabsIDs[tabId];
-            if (Object.keys(pinterestTabsIDs).length === 0) {
-                debugLog('REMOVE LISTENER');
-                chrome.tabs.onUpdated.removeListener(handlePinterestCountryCheckUpdated);
-                chrome.tabs.onRemoved.removeListener(handlePinterestCountryCheckRemoved);
-            }
-        }
-
         if (!countryChosen) {
             if (changeInfo.url) {
                 let countryPrefix = getCountryPrefix(changeInfo.url);
                 if (countryPrefix !== defaultCountryPrefix) {
                     baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
-                    logTab(tabId, `Changing country to "${countryPrefix}"...`);
-                    chrome.tabs.update(tabId, {
-                        'url': pinterestProto + countryPrefix + '.' + pinterestTabsIDs[tabId].pinterestURL
-                    });
-                } else {
-                    debugLogTab(tabId, `Country seems to be already selected: "${defaultCountryPrefix}", ` +
-                                `but we don't know yet if it's a final redirect.`);
+                    const newURL = `${pinterestProto}${countryPrefix}.${pinterestTabsIDs[tabId].pinterestURL}`;
+                    if (newURL !== changeInfo.url) {
+                        logTab(tabId, `Changing country to "${countryPrefix}"...`);
+                        chrome.tabs.update(tabId, {
+                            'url': newURL
+                        });
+                    } else {
+                        countryChosen = countryPrefix;
+                        debugLogTab(tabId, `Country is already selected: "${countryChosen}" - Saved.`);
+                    }
                 }
-            } else if (changeInfo.status === 'complete') {
-                countryChosen = getCountryPrefix(tabInfo.url);
-                logTab(tabId, `Country is already selected: "${countryChosen}". Saving...`);
             }
-        } else {
+        }
+        if (countryChosen) {
             let countryPrefix = getCountryPrefix(tabInfo.url);
             if (countryPrefix !== countryChosen) {
                 logTab(tabId, `Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
                 chrome.tabs.update(tabId, {
                     'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId].pinterestURL
                 });
-            } else {
-                debugLogTab(tabId, `Country is already selected: "${countryChosen}"...`);
             }
             if (changeInfo.status === "complete") {
-                _onPageLoadCompleted();
+                handlePinterestPageLoadCompleted(tabId);
             }
         }
     }
@@ -118,10 +118,10 @@
         chrome.tabs.create({'url': baseURL, 'active': true}, newTab => {
             debugLogTab(newTab.id, 'Gonna wait for pinterest tab to be ready');
             pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, 'searchURL': searchURL};
-            if (!chrome.tabs.onUpdated.hasListener(handlePinterestCountryCheckUpdated)) {
+            if (!chrome.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
                 debugLog('ADD LISTENER');
-                chrome.tabs.onUpdated.addListener(handlePinterestCountryCheckUpdated);
-                chrome.tabs.onRemoved.addListener(handlePinterestCountryCheckRemoved);
+                chrome.tabs.onUpdated.addListener(handlePinterestTabUpdated);
+                chrome.tabs.onRemoved.addListener(handlePinterestTabRemoved);
             }
         });
     }
