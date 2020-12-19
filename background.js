@@ -38,6 +38,7 @@
         (browser || chrome).tabs.executeScript(tabId, {
             code: `
                 console.log("[PinterestLight] Gonna search for ${queryURL}...");
+                window.vimiumDomTestsAreRunning = true;
 
                 document.querySelectorAll("[data-test-id='save-from-site-button'] button")[0].click();
 
@@ -50,6 +51,7 @@
                 document.getElementById('pin-draft-website-link').dispatchEvent(new Event('blur', { bubbles: true }));
 
                 document.querySelectorAll("[data-test-id='website-link-submit-button']")[0].click();
+                window.vimiumDomTestsAreRunning = false;
             `
         });
     }
