@@ -1,3 +1,6 @@
+## Version 0.4.2
+Restore work of the extension after Pinterest website updated design a little bit.
+
 ## Version 0.4.1
 Released Dec 19, 2020 - 19.98 KB
 Works with firefox 48.0 and later, android 48.0 and later

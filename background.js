@@ -39,17 +39,16 @@
             code: `
                 console.log("[PinterestLight] Gonna search for ${queryURL}...");
 
-                document.querySelectorAll("[data-test-id='save-from-site-button'] button")[0].click();
+                document.evaluate("//div[text()='Save from website']", document, null, XPathResult.ANY_TYPE, null).iterateNext().click();
 
                 Object.getOwnPropertyDescriptor(
                   window.HTMLInputElement.prototype, "value"
                 ).set.call(
-                        document.getElementById('pin-draft-website-link'), '${queryURL}'
+                        document.getElementById('save-from-site'), '${queryURL}'
                 );
-                document.getElementById('pin-draft-website-link').dispatchEvent(new Event('input', { bubbles: true }));
-                document.getElementById('pin-draft-website-link').dispatchEvent(new Event('blur', { bubbles: true }));
-
-                document.querySelectorAll("[data-test-id='website-link-submit-button']")[0].click();
+                document.getElementById('save-from-site').dispatchEvent(new Event('input', { bubbles: true }));
+                document.getElementById('save-from-site').dispatchEvent(new Event('blur', { bubbles: true }));
+                document.getElementById('save-from-site').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
             `
         });
     }
