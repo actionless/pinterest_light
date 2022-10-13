@@ -39,16 +39,26 @@
             code: `
                 console.log("[PinterestLight] Gonna search for ${queryURL}...");
 
-                document.evaluate("//div[text()='Save from website']", document, null, XPathResult.ANY_TYPE, null).iterateNext().click();
+                const inputId = "pin-draft-website-link";
+                document.evaluate(
+                    //"//div[text()='Save from site']",
+                    '//div[@data-test-id="save-from-site-button"]/*/button/*/div',
+                    document, null, XPathResult.ANY_TYPE, null
+                ).iterateNext().click();
 
                 Object.getOwnPropertyDescriptor(
                   window.HTMLInputElement.prototype, "value"
                 ).set.call(
-                        document.getElementById('save-from-site'), '${queryURL}'
+                        document.getElementById(inputId), '${queryURL}'
                 );
-                document.getElementById('save-from-site').dispatchEvent(new Event('input', { bubbles: true }));
-                document.getElementById('save-from-site').dispatchEvent(new Event('blur', { bubbles: true }));
-                document.getElementById('save-from-site').dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
+
+                document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
+                document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
+                document.evaluate(
+                    '//div[@data-test-id="website-link-submit-button"]',
+                    document, null, XPathResult.ANY_TYPE, null
+                ).iterateNext().click();
             `
         });
     }
