@@ -34,9 +34,10 @@
 
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    function doSearch(tabId, queryURL) {
+    async function doSearch(tabId, queryURL) {
         debugLogTab(tabId, `Do search for ${queryURL}`);
-            (browser || chrome).scripting.executeScript({
+        try {
+            await (browser || chrome).scripting.executeScript({
                 target: {
                     allFrames: true,
                     tabId: tabId
@@ -66,14 +67,11 @@
                         document, null, XPathResult.ANY_TYPE, null
                     ).iterateNext().click();
                 }
-            }).then(
-                () => {
-                    debugLogTab(tabId, "ALRIGHT");
-                },
-                (err) => {
-                    console.error(`failed to execute script: ${err}`);
-                }
-        );
+            })
+        } catch (err) {
+            console.error(`failed to execute script: ${err}`);
+        }
+        debugLogTab(tabId, "ALRIGHT");
     }
 
 
@@ -180,11 +178,11 @@
         }
     }
 
-    function handleBrowserTabChange(activeInfo) {
+    async function handleBrowserTabChange(activeInfo) {
+        let tab
         if (browser) {
-            browser.tabs.get(activeInfo.tabId).then(tab => {
-                handleNewURL(tab.url);
-            });
+            tab = await browser.tabs.get(activeInfo.tabId)
+            handleNewURL(tab.url);
         } else {
             chrome.tabs.get(activeInfo.tabId, tab => {
                 handleNewURL(tab.url);
@@ -192,7 +190,7 @@
         }
     }
 
-    function handleBrowserURLChange(tabId, changeInfo, _tab) {
+    async function handleBrowserURLChange(tabId, changeInfo, _tab) {
         if (changeInfo.url) {
             handleNewURL(changeInfo.url);
         }
