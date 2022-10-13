@@ -4,20 +4,21 @@
 
     //const debug = false;
     const debug = true;
-    function debugLog(message) {
-        if (debug) console.warn(message);
+    function debugLog(...message) {
+        if (debug) console.warn(...message);
     }
-    function debugLogTab(tabId, message) {
-        debugLog(`[pinterest_light:${tabId}] ${message}`)
+    function debugLogTab(tabId, ...message) {
+        debugLog(`[pinterest_light:${tabId}]`, ...message)
     }
-    function logTab(tabId, message) {
-        console.log(`[pinterest_light:${tabId}] ${message}`)
+    function logTab(tabId, ...message) {
+        console.log(`[pinterest_light:${tabId}]`, ...message)
     }
 
 
     /*global chrome:false */
     var browser = browser || null;
 
+    const hostPermissionUrl = "*://*.pinterest.com/pin-builder/*";
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
     const pinterestURLTemplate = ".pinterest.com/pin-builder/";
@@ -35,32 +36,44 @@
 
     function doSearch(tabId, queryURL) {
         debugLogTab(tabId, `Do search for ${queryURL}`);
-        (browser || chrome).tabs.executeScript(tabId, {
-            code: `
-                console.log("[PinterestLight] Gonna search for ${queryURL}...");
+            (browser || chrome).scripting.executeScript({
+                target: {
+                    allFrames: true,
+                    tabId: tabId
+                },
+                args: [queryURL],
+                func: queryURL => {
+                    console.log(`[PinterestLight] Gonna search for ${queryURL}...`);
 
-                const inputId = "pin-draft-website-link";
-                document.evaluate(
-                    //"//div[text()='Save from site']",
-                    '//div[@data-test-id="save-from-site-button"]/*/button/*/div',
-                    document, null, XPathResult.ANY_TYPE, null
-                ).iterateNext().click();
+                    const inputId = "pin-draft-website-link";
+                    document.evaluate(
+                        //"//div[text()='Save from site']",
+                        '//div[@data-test-id="save-from-site-button"]/*/button/*/div',
+                        document, null, XPathResult.ANY_TYPE, null
+                    ).iterateNext().click();
 
-                Object.getOwnPropertyDescriptor(
-                  window.HTMLInputElement.prototype, "value"
-                ).set.call(
-                        document.getElementById(inputId), '${queryURL}'
-                );
+                    Object.getOwnPropertyDescriptor(
+                      window.HTMLInputElement.prototype, "value"
+                    ).set.call(
+                            document.getElementById(inputId), queryURL
+                    );
 
-                document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
-                document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
-                document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
-                document.evaluate(
-                    '//div[@data-test-id="website-link-submit-button"]',
-                    document, null, XPathResult.ANY_TYPE, null
-                ).iterateNext().click();
-            `
-        });
+                    document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                    document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
+                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
+                    document.evaluate(
+                        '//div[@data-test-id="website-link-submit-button"]',
+                        document, null, XPathResult.ANY_TYPE, null
+                    ).iterateNext().click();
+                }
+            }).then(
+                () => {
+                    debugLogTab(tabId, "ALRIGHT");
+                },
+                (err) => {
+                    console.error(`failed to execute script: ${err}`);
+                }
+        );
     }
 
 
@@ -88,7 +101,7 @@
     function handlePinterestTabUpdated(tabId, changeInfo, tabInfo) {
 
         debugLogTab(tabId, `tab changed:`);
-        debugLog(changeInfo);
+        debugLogTab(tabId, changeInfo);
 
         if (!(pinterestTabsIDs[tabId])) {
             debugLogTab(tabId, `tab isn't registered`);
@@ -132,9 +145,10 @@
     }
 
 
-    function searchCurrentTabURLonPinterest(currentTab) {
+    async function searchCurrentTabURLonPinterest(currentTab) {
         const searchURL = currentTab.url;
         debugLog(`Found active tab: ${searchURL}`);
+        await requestPermissions();
         chrome.tabs.create({'url': baseURL, 'active': true}, newTab => {
             debugLogTab(newTab.id, 'Gonna wait for pinterest tab to be ready');
             pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, 'searchURL': searchURL};
@@ -146,15 +160,23 @@
         });
     }
 
-
+    async function requestPermissions() {
+        await (browser || chrome).permissions.request(
+            {
+                origins: [
+                    hostPermissionUrl
+                ]
+            }
+        );
+    }
 
     // Handlers for extension button status: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     function handleNewURL(url) {
         if (['http:', 'https:'].includes(new URL(url).protocol)) {
-            chrome.browserAction.enable();
+            chrome.action.enable();
         } else {
-            chrome.browserAction.disable();
+            chrome.action.disable();
         }
     }
 
@@ -182,7 +204,7 @@
 
     chrome.tabs.onActivated.addListener(handleBrowserTabChange);
     chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
-    chrome.browserAction.onClicked.addListener(searchCurrentTabURLonPinterest);
+    chrome.action.onClicked.addListener(searchCurrentTabURLonPinterest);
 
 
 })());
