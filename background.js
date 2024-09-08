@@ -21,7 +21,7 @@
     const hostPermissionUrl = "*://*.pinterest.com/pin-builder/*";
     const pinterestProto = "https://";
     const defaultCountryPrefix = "www";
-    const pinterestURLTemplate = ".pinterest.com/pin-builder/";
+    const pinterestURLTemplate = ".pinterest.com/pin-builder/?tab=save_from_url";
     let baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate;
     let pinterestTabsIDs = {};
     let countryChosen = false;
@@ -44,28 +44,132 @@
                 },
                 args: [queryURL],
                 func: queryURL => {
-                    console.log(`[PinterestLight] Gonna search for ${queryURL}...`);
 
-                    const inputId = "pin-draft-website-link";
-                    document.evaluate(
-                        //"//div[text()='Save from site']",
-                        '//div[@data-test-id="save-from-site-button"]/*/button/*/div',
-                        document, null, XPathResult.ANY_TYPE, null
-                    ).iterateNext().click();
+                    function triggerFocus(element) {
+                        let eventType = "onfocusin" in element ? "focusin" : "focus";
+                        let bubbles = "onfocusin" in element;
+                        let event;
 
-                    Object.getOwnPropertyDescriptor(
-                      window.HTMLInputElement.prototype, "value"
-                    ).set.call(
-                            document.getElementById(inputId), queryURL
-                    );
+                        if ("createEvent" in document) {
+                            event = document.createEvent("Event");
+                            event.initEvent(eventType, bubbles, true);
+                        }
+                        else if ("Event" in window) {
+                            event = new Event(eventType, { bubbles: bubbles, cancelable: true });
+                        }
 
-                    document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
-                    document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
-                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
-                    document.evaluate(
-                        '//div[@data-test-id="website-link-submit-button"]',
-                        document, null, XPathResult.ANY_TYPE, null
-                    ).iterateNext().click();
+                        element.focus();
+                        element.dispatchEvent(event);
+                    }
+
+                    let getBySelector = (selector) => { return Array.from(document.querySelectorAll(selector)); };
+
+                    function xpath(selector) {
+                        return document.evaluate(
+                            selector,
+                            document, null, XPathResult.ANY_TYPE, null
+                        ).iterateNext()
+                    }
+
+                    function waitForElmXpath(selector) {
+                        return new Promise(resolve => {
+                            if (xpath(selector)) {
+                                return resolve(xpath(selector));
+                            }
+
+                            const observer = new MutationObserver(mutations => {
+                                if (xpath(selector)) {
+                                    observer.disconnect();
+                                    resolve(xpath(selector));
+                                }
+                            });
+
+                            observer.observe(document.body, {
+                                childList: true,
+                                subtree: true
+                            });
+                        });
+                    }
+
+                    function waitForElmId(id) {
+                        return new Promise(resolve => {
+                            if (document.getElementById(id)) {
+                                return resolve(document.getElementById(id));
+                            }
+
+                            const observer = new MutationObserver(mutations => {
+                                if (document.getElementById(id)) {
+                                    observer.disconnect();
+                                    resolve(document.getElementById(id));
+                                }
+                            });
+
+                            observer.observe(document.body, {
+                                childList: true,
+                                subtree: true
+                            });
+                        });
+                    }
+
+                    let customLog (msg) => { console.log(`[PinterestLight] ${msg}`); };
+
+                    customLog(`Gonna search for ${queryURL}...`);
+
+                    const inputId = "scrape-view-website-link";
+                    waitForElmId(inputId).then((elm) => {
+                    waitForElmXpath('//button[@aria-label="Submit"]').then((submitElm) => {
+
+                        console.log("Found", elm);
+
+                        // document.evaluate(
+                        //     "//div[text()='Save from URL']/ancestor::*/button",
+                        //     document, null, XPathResult.ANY_TYPE, null
+                        // ).iterateNext().click();
+                        // elm.click();
+
+                        // Object.getOwnPropertyDescriptor(
+                        //   window.HTMLInputElement.prototype, "value"
+                        // ).set.call(
+                        //         document.getElementById(inputId), queryURL
+                        // );
+
+                        triggerFocus(elm);
+
+                        document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
+                        elm.click();
+                        console.log("Before:", elm.value);
+                        elm.value = queryURL;
+                        console.log("After:", elm.value);
+
+                        document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                        document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
+                        document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
+
+                        let intervalId;
+                        let delayedSetValue = () => {
+                            let elm = document.getElementById(inputId);
+
+                            elm.click();
+                            triggerFocus(elm);
+
+                            console.log("checker", elm.value);
+                            elm.value = queryURL;
+                            console.log("checker_After:", elm.value);
+
+                            document.evaluate(
+                                '//button[@aria-label="Submit"]',
+                                document, null, XPathResult.ANY_TYPE, null
+                            ).iterateNext().click();
+
+                            if (getBySelector('[data-test-id="image-from-search-container"]').length > 0) {
+                                console.log("Results loaded - stopping observer.")
+                                clearInterval(intervalId);
+                            }
+                        };
+                        intervalId = setInterval(delayedSetValue, 500);
+
+                    });
+                    });
                 }
             })
         } catch (err) {
@@ -118,6 +222,7 @@
                     const newURL = `${pinterestProto}${countryPrefix}.${pinterestTabsIDs[tabId].pinterestURL}`;
                     if (newURL !== changeInfo.url) {
                         logTab(tabId, `Changing country to "${countryPrefix}"...`);
+                        logTab([newURL, changeInfo.url]);
                         chrome.tabs.update(tabId, {
                             'url': newURL
                         });
