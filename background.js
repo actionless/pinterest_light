@@ -111,7 +111,7 @@
                         });
                     }
 
-                    let customLog (msg) => { console.log(`[PinterestLight] ${msg}`); };
+                    let customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); };
 
                     customLog(`Gonna search for ${queryURL}...`);
 
@@ -119,7 +119,7 @@
                     waitForElmId(inputId).then((elm) => {
                     waitForElmXpath('//button[@aria-label="Submit"]').then((submitElm) => {
 
-                        console.log("Found", elm);
+                        customLog("Found", elm);
 
                         // document.evaluate(
                         //     "//div[text()='Save from URL']/ancestor::*/button",
@@ -137,9 +137,9 @@
 
                         document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
                         elm.click();
-                        console.log("Before:", elm.value);
+                        customLog("Before:", elm.value);
                         elm.value = queryURL;
-                        console.log("After:", elm.value);
+                        customLog("After:", elm.value);
 
                         document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
                         document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
@@ -152,9 +152,9 @@
                             elm.click();
                             triggerFocus(elm);
 
-                            console.log("checker", elm.value);
+                            customLog("checker", elm.value);
                             elm.value = queryURL;
-                            console.log("checker_After:", elm.value);
+                            customLog("checker_After:", elm.value);
 
                             document.evaluate(
                                 '//button[@aria-label="Submit"]',
@@ -162,7 +162,7 @@
                             ).iterateNext().click();
 
                             if (getBySelector('[data-test-id="image-from-search-container"]').length > 0) {
-                                console.log("Results loaded - stopping observer.")
+                                customLog("Results loaded - stopping observer.")
                                 clearInterval(intervalId);
                             }
                         };
