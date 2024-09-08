@@ -117,58 +117,58 @@
 
                     const inputId = "scrape-view-website-link";
                     waitForElmId(inputId).then((elm) => {
-                    waitForElmXpath('//button[@aria-label="Submit"]').then((submitElm) => {
+                        waitForElmXpath('//button[@aria-label="Submit"]').then((submitElm) => {
 
-                        customLog("Found", elm);
+                            customLog("Found", elm);
 
-                        // document.evaluate(
-                        //     "//div[text()='Save from URL']/ancestor::*/button",
-                        //     document, null, XPathResult.ANY_TYPE, null
-                        // ).iterateNext().click();
-                        // elm.click();
+                            // document.evaluate(
+                            //     "//div[text()='Save from URL']/ancestor::*/button",
+                            //     document, null, XPathResult.ANY_TYPE, null
+                            // ).iterateNext().click();
+                            // elm.click();
 
-                        // Object.getOwnPropertyDescriptor(
-                        //   window.HTMLInputElement.prototype, "value"
-                        // ).set.call(
-                        //         document.getElementById(inputId), queryURL
-                        // );
+                            // Object.getOwnPropertyDescriptor(
+                            //   window.HTMLInputElement.prototype, "value"
+                            // ).set.call(
+                            //         document.getElementById(inputId), queryURL
+                            // );
 
-                        triggerFocus(elm);
-
-                        document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
-                        elm.click();
-                        customLog("Before:", elm.value);
-                        elm.value = queryURL;
-                        customLog("After:", elm.value);
-
-                        document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
-                        document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
-                        document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
-
-                        let intervalId;
-                        let delayedSetValue = () => {
-                            let elm = document.getElementById(inputId);
-
-                            elm.click();
                             triggerFocus(elm);
 
-                            customLog("checker", elm.value);
+                            document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
+                            elm.click();
+                            customLog("Before:", elm.value);
                             elm.value = queryURL;
-                            customLog("checker_After:", elm.value);
+                            customLog("After:", elm.value);
 
-                            document.evaluate(
-                                '//button[@aria-label="Submit"]',
-                                document, null, XPathResult.ANY_TYPE, null
-                            ).iterateNext().click();
+                            document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                            document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
+                            document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
 
-                            if (getBySelector('[data-test-id="image-from-search-container"]').length > 0) {
-                                customLog("Results loaded - stopping observer.")
-                                clearInterval(intervalId);
-                            }
-                        };
-                        intervalId = setInterval(delayedSetValue, 500);
+                            let intervalId;
+                            let delayedSetValue = () => {
+                                let elm = document.getElementById(inputId);
 
-                    });
+                                elm.click();
+                                triggerFocus(elm);
+
+                                customLog("checker", elm.value);
+                                elm.value = queryURL;
+                                customLog("checker_After:", elm.value);
+
+                                document.evaluate(
+                                    '//button[@aria-label="Submit"]',
+                                    document, null, XPathResult.ANY_TYPE, null
+                                ).iterateNext().click();
+
+                                if (getBySelector('[data-test-id="image-from-search-container"]').length > 0) {
+                                    customLog("Results loaded - stopping observer.")
+                                    clearInterval(intervalId);
+                                }
+                            };
+                            intervalId = setInterval(delayedSetValue, 500);
+
+                        });
                     });
                 }
             })
