@@ -1,80 +1,86 @@
-((() => {
+((() => {  
     'use strict';
 
+    /*global chrome:false */
+    var browser = browser || null; /* eslint-disable-line */
 
     //const debug = false;
-    const debug = true;
-    function debugLog(...message) {
-        if (debug) console.warn(...message);
-    }
-    function debugLogTab(tabId, ...message) {
+    const debug = true,
+    ZERO = 0,
+    debugLog = (...message) => {
+        if (debug) {console.warn(...message); }
+    },
+    debugLogTab = (tabId, ...message) => {
         debugLog(`[pinterest_light:${tabId}]`, ...message)
-    }
-    function logTab(tabId, ...message) {
+    },
+    logTab = (tabId, ...message) => {
         console.log(`[pinterest_light:${tabId}]`, ...message)
-    }
-
-
-    /*global chrome:false */
-    var browser = browser || null;
-
-    const hostPermissionUrl = "*://*.pinterest.com/pin-builder/*";
-    const pinterestProto = "https://";
-    const defaultCountryPrefix = "www";
-    const pinterestURLTemplate = ".pinterest.com/pin-builder/?tab=save_from_url";
-    let baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate;
-    let pinterestTabsIDs = {};
-    let countryChosen = false;
-
-    function getCountryPrefix(url) {
-        return new URL(url).hostname.split('.')[0];
-    }
-
-
-
+    },
+    defaultCountryPrefix = "www",
+    hostPermissionUrl = "*://*.pinterest.com/pin-builder/*",
+    pinterestProto = "https://",
+    pinterestURLTemplate = ".pinterest.com/pin-builder/?tab=save_from_url",
+    pinterestTabsIDs = {},
+    getCountryPrefix = (url) => new URL(url).hostname.split('.')[ZERO],
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    async function doSearch(tabId, queryURL) {
+    doSearch = async (tabId, queryURL) => { /* eslint-disable-line max-lines-per-function */
         debugLogTab(tabId, `Do search for ${queryURL}`);
         try {
             await (browser || chrome).scripting.executeScript({
+                args: [queryURL],
                 target: {
                     allFrames: true,
-                    tabId: tabId
+                    tabId
                 },
-                args: [queryURL],
-                func: queryURL => {
+                func: url => { /* eslint-disable-line sort-keys, max-lines-per-function */
 
-                    function triggerFocus(element) {
-                        let eventType = "onfocusin" in element ? "focusin" : "focus";
-                        let bubbles = "onfocusin" in element;
-                        let event;
+                    const customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); },
+                        inputId = "scrape-view-website-link",
+                        UPDATE_INTERVAL_MS = 500,
+                        ZERO_BROWSER = 0,
+                        getBySelector = (selector) => Array.from(document.querySelectorAll(selector)),
+                        triggerFocus = (element) => {
+                            const bubbles = "onfocusin" in element,
+                                eventType = "onfocusin" in element ? "focusin" : "focus";
+                            let event = null;
 
-                        if ("createEvent" in document) {
-                            event = document.createEvent("Event");
-                            event.initEvent(eventType, bubbles, true);
-                        }
-                        else if ("Event" in window) {
-                            event = new Event(eventType, { bubbles: bubbles, cancelable: true });
-                        }
+                            if ("createEvent" in document) {
+                                event = document.createEvent("Event");
+                                event.initEvent(eventType, bubbles, true);
+                            }
+                            else if ("Event" in window) {
+                                event = new Event(eventType, { bubbles, cancelable: true });
+                            }
 
-                        element.focus();
-                        element.dispatchEvent(event);
-                    }
+                            element.focus();
+                            if (event) { element.dispatchEvent(event); };
+                        },
+                        waitForElmId = (id) => new Promise(resolve => {
+                                if (document.getElementById(id)) {
+                                    resolve(document.getElementById(id));
+                                    return;
+                                }
 
-                    let getBySelector = (selector) => { return Array.from(document.querySelectorAll(selector)); };
+                                const observer = new MutationObserver(_mutations => {
+                                    if (document.getElementById(id)) {
+                                        observer.disconnect();
+                                        resolve(document.getElementById(id));
+                                    }
+                                });
 
-                    function xpath(selector) {
-                        return document.evaluate(
+                                observer.observe(document.body, {
+                                    childList: true,
+                                    subtree: true
+                                });
+                            }),
+                        xpath = (selector) => document.evaluate(
                             selector,
                             document, null, XPathResult.ANY_TYPE, null
-                        ).iterateNext()
-                    }
-
-                    function waitForElmXpath(selector) {
-                        return new Promise(resolve => {
+                        ).iterateNext(),
+                         waitForElmXpath = (selector) => new Promise(resolve => {
                             if (xpath(selector)) {
-                                return resolve(xpath(selector));
+                                resolve(xpath(selector));
+                                return;
                             }
 
                             const observer = new MutationObserver(_mutations => {
@@ -89,35 +95,11 @@
                                 subtree: true
                             });
                         });
-                    }
 
-                    function waitForElmId(id) {
-                        return new Promise(resolve => {
-                            if (document.getElementById(id)) {
-                                return resolve(document.getElementById(id));
-                            }
+                    customLog(`Gonna search for ${url}...`);
 
-                            const observer = new MutationObserver(_mutations => {
-                                if (document.getElementById(id)) {
-                                    observer.disconnect();
-                                    resolve(document.getElementById(id));
-                                }
-                            });
-
-                            observer.observe(document.body, {
-                                childList: true,
-                                subtree: true
-                            });
-                        });
-                    }
-
-                    let customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); };
-
-                    customLog(`Gonna search for ${queryURL}...`);
-
-                    const inputId = "scrape-view-website-link";
                     waitForElmId(inputId).then((elm) => {
-                        waitForElmXpath('//button[@aria-label="Submit"]').then((_submitElm) => {
+                        waitForElmXpath('//button[@aria-label="Submit"]').then((_submitElm) => { /* eslint-disable-line max-statements */
 
                             customLog("Found", elm);
 
@@ -126,35 +108,35 @@
                             document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
                             elm.click();
                             customLog("Before:", elm.value);
-                            elm.value = queryURL;
+                            elm.value = url;
                             customLog("After:", elm.value);
 
                             document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
                             document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
                             document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
 
-                            let intervalId;
-                            let delayedSetValue = () => {
-                                let elm = document.getElementById(inputId);
+                            let intervalId; /* eslint-disable-line */
+                            const delayedSetValue = () => {
+                                const inputElement = document.getElementById(inputId);
 
-                                elm.click();
-                                triggerFocus(elm);
+                                inputElement.click();
+                                triggerFocus(inputElement);
 
-                                customLog("checker", elm.value);
-                                elm.value = queryURL;
-                                customLog("checker_After:", elm.value);
+                                customLog("checker", inputElement.value);
+                                inputElement.value = url;
+                                customLog("checker_After:", inputElement.value);
 
                                 document.evaluate(
                                     '//button[@aria-label="Submit"]',
                                     document, null, XPathResult.ANY_TYPE, null
                                 ).iterateNext().click();
 
-                                if (getBySelector('[data-test-id="image-from-search-container"]').length > 0) {
+                                if (getBySelector('[data-test-id="image-from-search-container"]').length > ZERO_BROWSER) {
                                     customLog("Results loaded - stopping observer.")
                                     clearInterval(intervalId);
                                 }
                             };
-                            intervalId = setInterval(delayedSetValue, 500);
+                            intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
 
                         });
                     });
@@ -164,31 +146,28 @@
             console.error(`failed to execute script: ${err}`);
         }
         debugLogTab(tabId, "ALRIGHT");
-    }
+    };
 
-
+    let baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate,
+        countryChosen = false;
 
     // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
-
-    function handlePinterestPageLoadCompleted(tabId) {
+    const /* eslint-disable-line one-var */
+    handlePinterestPageLoadCompleted = (tabId) => {
         doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
         delete pinterestTabsIDs[tabId];
-        if (Object.keys(pinterestTabsIDs).length === 0) {
+        if (Object.keys(pinterestTabsIDs).length === ZERO) {
             debugLog('REMOVE LISTENER');
-            chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated);
-            chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved);
+            chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated); /* eslint-disable-line no-use-before-define */
+            chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved); /* eslint-disable-line no-use-before-define */
         }
-    }
-
-
-    function handlePinterestTabRemoved(tabId, _removeInfo) {
+    },
+    handlePinterestTabRemoved = (tabId, _removeInfo) => {
         if (pinterestTabsIDs[tabId]) {
             delete pinterestTabsIDs[tabId];
         }
-    }
-
-
-    function handlePinterestTabUpdated(tabId, changeInfo, tabInfo) {
+    },
+    handlePinterestTabUpdated = (tabId, changeInfo, tabInfo) => { /* eslint-disable-line max-statements */
 
         debugLogTab(tabId, `tab changed:`);
         debugLogTab(tabId, changeInfo);
@@ -204,54 +183,38 @@
 
         if (!countryChosen) {
             if (changeInfo.url) {
-                let countryPrefix = getCountryPrefix(changeInfo.url);
+                const countryPrefix = getCountryPrefix(changeInfo.url);
                 if (countryPrefix !== defaultCountryPrefix) {
                     baseURL = pinterestProto + countryPrefix + pinterestURLTemplate;
                     const newURL = `${pinterestProto}${countryPrefix}.${pinterestTabsIDs[tabId].pinterestURL}`;
-                    if (newURL !== changeInfo.url) {
+                    if (newURL === changeInfo.url) {
+                        countryChosen = countryPrefix;
+                        debugLogTab(tabId, `Country is already selected: "${countryChosen}" - Saved.`);
+                    } else {
                         logTab(tabId, `Changing country to "${countryPrefix}"...`);
                         logTab([newURL, changeInfo.url]);
                         chrome.tabs.update(tabId, {
                             'url': newURL
                         });
-                    } else {
-                        countryChosen = countryPrefix;
-                        debugLogTab(tabId, `Country is already selected: "${countryChosen}" - Saved.`);
                     }
                 }
             }
         }
         if (countryChosen) {
-            let countryPrefix = getCountryPrefix(tabInfo.url);
+            const countryPrefix = getCountryPrefix(tabInfo.url);
             if (countryPrefix !== countryChosen) {
                 logTab(tabId, `Changing country from ${countryPrefix} to ALREADY SELECTED "${countryChosen}"...`);
                 chrome.tabs.update(tabId, {
-                    'url': pinterestProto + countryChosen + '.' + pinterestTabsIDs[tabId].pinterestURL
+                    'url': `${pinterestProto + countryChosen  }.${  pinterestTabsIDs[tabId].pinterestURL}`
                 });
             }
             if (changeInfo.status === "complete") {
                 handlePinterestPageLoadCompleted(tabId);
             }
         }
-    }
+    },
 
-
-    async function searchCurrentTabURLonPinterest(currentTab) {
-        const searchURL = currentTab.url;
-        debugLog(`Found active tab: ${searchURL}`);
-        await requestPermissions();
-        chrome.tabs.create({'url': baseURL, 'active': true}, newTab => {
-            debugLogTab(newTab.id, 'Gonna wait for pinterest tab to be ready');
-            pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, 'searchURL': searchURL};
-            if (!chrome.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
-                debugLog('ADD LISTENER');
-                chrome.tabs.onUpdated.addListener(handlePinterestTabUpdated);
-                chrome.tabs.onRemoved.addListener(handlePinterestTabRemoved);
-            }
-        });
-    }
-
-    async function requestPermissions() {
+    requestPermissions = async () => {
         await (browser || chrome).permissions.request(
             {
                 origins: [
@@ -259,44 +222,51 @@
                 ]
             }
         );
-    }
+    },
+    searchCurrentTabURLonPinterest= async (currentTab) => {
+        const searchURL = currentTab.url;
+        debugLog(`Found active tab: ${searchURL}`);
+        await requestPermissions();
+        chrome.tabs.create({'active': true, 'url': baseURL}, newTab => {
+            debugLogTab(newTab.id, 'Gonna wait for pinterest tab to be ready');
+            pinterestTabsIDs[newTab.id] = {'pinterestURL': newTab.title, searchURL};
+            if (!chrome.tabs.onUpdated.hasListener(handlePinterestTabUpdated)) {
+                debugLog('ADD LISTENER');
+                chrome.tabs.onUpdated.addListener(handlePinterestTabUpdated);
+                chrome.tabs.onRemoved.addListener(handlePinterestTabRemoved);
+            }
+        });
+    },
 
     // Handlers for extension button status: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    function handleNewURL(url) {
+    handleNewURL = (url) => {
         if (['http:', 'https:'].includes(new URL(url).protocol)) {
             chrome.action.enable();
         } else {
             chrome.action.disable();
         }
-    }
-
-    async function handleBrowserTabChange(activeInfo) {
-        let tab
+    },
+    handleBrowserTabChange = async (activeInfo) => {
         if (browser) {
-            tab = await browser.tabs.get(activeInfo.tabId)
+            const tab = await browser.tabs.get(activeInfo.tabId)
             handleNewURL(tab.url);
         } else {
             chrome.tabs.get(activeInfo.tabId, tab => {
                 handleNewURL(tab.url);
             });
         }
-    }
-
-    async function handleBrowserURLChange(tabId, changeInfo, _tab) {
+    },
+    handleBrowserURLChange = (tabId, changeInfo, _tab) => {
         if (changeInfo.url) {
             handleNewURL(changeInfo.url);
         }
-    }
-
+    };
 
 
     // Actual event listeners: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     chrome.tabs.onActivated.addListener(handleBrowserTabChange);
     chrome.tabs.onUpdated.addListener(handleBrowserURLChange);
     chrome.action.onClicked.addListener(searchCurrentTabURLonPinterest);
-
 
 })());
 //  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
