@@ -1,0 +1,33 @@
+{
+  "name": "pinterest_light",
+  "version": "0.6.0",
+  "description": "Extremely lightweight unofficial addon for pinning things to Pinterest.",
+  "main": "background.js",
+  "scripts": {
+    "test": "eslint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/actionless/pinterest_light.git"
+  },
+  "keywords": [
+    "firefox",
+    "pinterest",
+    "addon",
+    "chrome",
+    "extension",
+    "webext",
+    "webextension"
+  ],
+  "author": "actionless",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/actionless/pinterest_light/issues"
+  },
+  "homepage": "https://github.com/actionless/pinterest_light#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0"
+  }
+}
