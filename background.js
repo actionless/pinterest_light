@@ -154,8 +154,8 @@
 
     // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
     const /* eslint-disable-line one-var */
-    handlePinterestPageLoadCompleted = (tabId) => {
-        doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
+    handlePinterestPageLoadCompleted = async (tabId) => {
+        await doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
         delete pinterestTabsIDs[tabId];
         if (Object.keys(pinterestTabsIDs).length === ZERO) {
             debugLog('REMOVE LISTENER');
@@ -168,7 +168,7 @@
             delete pinterestTabsIDs[tabId];
         }
     },
-    handlePinterestTabUpdated = (tabId, changeInfo, tabInfo) => { /* eslint-disable-line max-statements */
+    handlePinterestTabUpdated = async (tabId, changeInfo, tabInfo) => { /* eslint-disable-line max-statements */
 
         debugLogTab(tabId, `tab changed:`);
         debugLogTab(tabId, changeInfo);
@@ -210,7 +210,7 @@
                 });
             }
             if (changeInfo.status === "complete") {
-                handlePinterestPageLoadCompleted(tabId);
+                await handlePinterestPageLoadCompleted(tabId);
             }
         }
     },
