@@ -6,7 +6,6 @@
 
     //const debug = false;
     const debug = true,
-    ZERO = 0,
     debugLog = (...message) => {
         if (debug) {console.warn(...message); }
     },
@@ -20,7 +19,7 @@
     defaultCountryPrefix = "www",
     pinterestURLTemplate = ".pinterest.com/pin-builder/?tab=save_from_url",
     hostPermissionUrl = "*://*.pinterest.com/pin-builder/*",
-    getCountryPrefix = (url) => new URL(url).hostname.split('.')[ZERO],
+    getCountryPrefix = (url) => new URL(url).hostname.split('.')[0],
     pinterestTabsIDs = {},
 
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -34,12 +33,12 @@
                     allFrames: true,
                     tabId
                 },
-                func: async url => { /* eslint-disable-line sort-keys, max-lines-per-function */
+                func: async url => { /* eslint-disable-line sort-keys, max-lines-per-function, max-statements */
 
                     // content script helpers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                     const
-                    ZERO_BROWSER = 0,
                     UPDATE_INTERVAL_MS = 500,
+                    MAX_RETRIES = 200,
                     inputId = "scrape-view-website-link",
                     submitXpath = '//button[@aria-label="Submit"]',
                     searchResultSelector = '[data-test-id="image-from-search-container"]',
@@ -85,6 +84,8 @@
                         document, null, XPathResult.ANY_TYPE, null
                     ).iterateNext(),
 
+                    sleep = (ms) => new Promise(resolve => { setTimeout(resolve, ms); }),
+
                     waitForElmXpath = (selector) => new Promise(resolve => {
                         if (xpath(selector)) {
                             resolve(xpath(selector));
@@ -120,8 +121,8 @@
                     document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
                     document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
 
-                    let intervalId; /* eslint-disable-line */
-                    const delayedSetValue = () => {
+                    let numTries = 0;
+                    for ( ; numTries <= MAX_RETRIES ; numTries += 1) {
                         const inputElement = document.getElementById(inputId);
                         customLog("checker_Before:", inputElement.value);
 
@@ -137,15 +138,19 @@
                             document, null, XPathResult.ANY_TYPE, null
                         ).iterateNext().click();
 
-                        if (getBySelector(searchResultSelector).length > ZERO_BROWSER) {
+                        if (getBySelector(searchResultSelector).length > 0) {
                             customLog("Results loaded - stopping observer.");
-                            clearInterval(intervalId);
-                        } else if (getBySelector(noResultSelector).length > ZERO_BROWSER) {
+                            break;
+                        } else if (getBySelector(noResultSelector).length > 0) {
                             customLog("No results found by Pinterest - stopping observer.");
-                            clearInterval(intervalId);
+                            break;
                         }
+
+                        await sleep(UPDATE_INTERVAL_MS); /* eslint-disable-line no-await-in-loop */
                     };
-                    intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
+                    if (numTries > MAX_RETRIES ) {
+                        customLog(`Maximum retries (${MAX_RETRIES}) exceeded - stopped observer.`);
+                    }
                     // content script main part end >>>>>>>>>>>>>>>>>>>>>>>>>>>
                 }
             });
@@ -165,7 +170,7 @@
     handlePinterestPageLoadCompleted = async (tabId) => {
         await doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
         delete pinterestTabsIDs[tabId];
-        if (Object.keys(pinterestTabsIDs).length === ZERO) {
+        if (Object.keys(pinterestTabsIDs).length === 0) {
             debugLog('REMOVE LISTENER');
             chrome.tabs.onUpdated.removeListener(handlePinterestTabUpdated); /* eslint-disable-line no-use-before-define */
             chrome.tabs.onRemoved.removeListener(handlePinterestTabRemoved); /* eslint-disable-line no-use-before-define */

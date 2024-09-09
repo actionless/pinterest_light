@@ -21,6 +21,12 @@ export default [
             ],
             "no-console": ["off"],
             "no-inline-comments": ["off"],
+            "no-magic-numbers": [
+                "error",
+                {
+                    "ignore": [0, 1] /* eslint-disable-line no-magic-numbers */
+                }
+            ],
             "no-ternary": ["off"],
             "no-unused-vars": [
                 "warn",
