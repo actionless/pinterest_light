@@ -116,7 +116,7 @@
                     customLog("Before:", elm.value);
                     elm.value = url;
                     customLog("After:", elm.value);
-                    document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                    elm.dispatchEvent(new Event('input', { bubbles: true }));
 
                     let numTries = 0;
                     for ( ; numTries <= MAX_RETRIES ; numTries += 1) {
