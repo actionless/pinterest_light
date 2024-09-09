@@ -112,14 +112,11 @@
                     customLog("Found", elm);
 
                     triggerFocus(elm);
-                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
                     elm.click();
                     customLog("Before:", elm.value);
                     elm.value = url;
                     customLog("After:", elm.value);
                     document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
-                    document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
-                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
 
                     let numTries = 0;
                     for ( ; numTries <= MAX_RETRIES ; numTries += 1) {
