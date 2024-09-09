@@ -77,7 +77,7 @@
                                 return resolve(xpath(selector));
                             }
 
-                            const observer = new MutationObserver(mutations => {
+                            const observer = new MutationObserver(_mutations => {
                                 if (xpath(selector)) {
                                     observer.disconnect();
                                     resolve(xpath(selector));
@@ -97,7 +97,7 @@
                                 return resolve(document.getElementById(id));
                             }
 
-                            const observer = new MutationObserver(mutations => {
+                            const observer = new MutationObserver(_mutations => {
                                 if (document.getElementById(id)) {
                                     observer.disconnect();
                                     resolve(document.getElementById(id));
@@ -117,7 +117,7 @@
 
                     const inputId = "scrape-view-website-link";
                     waitForElmId(inputId).then((elm) => {
-                        waitForElmXpath('//button[@aria-label="Submit"]').then((submitElm) => {
+                        waitForElmXpath('//button[@aria-label="Submit"]').then((_submitElm) => {
 
                             customLog("Found", elm);
 
