@@ -224,7 +224,7 @@
             }
         );
     },
-    searchCurrentTabURLonPinterest= async (currentTab) => {
+    searchCurrentTabURLonPinterest = async (currentTab) => {
         const searchURL = currentTab.url;
         debugLog(`Found active tab: ${searchURL}`);
         await requestPermissions();
