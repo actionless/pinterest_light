@@ -135,6 +135,9 @@
                                 if (getBySelector('[data-test-id="image-from-search-container"]').length > ZERO_BROWSER) {
                                     customLog("Results loaded - stopping observer.")
                                     clearInterval(intervalId);
+                                } else if (getBySelector('[data-test-id="pinbuilder-pin-draft-input-scrape-grid-error-message"]').length > ZERO_BROWSER) {
+                                    customLog("No results found by Pinterest - stopping observer.")
+                                    clearInterval(intervalId);
                                 }
                             };
                             intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
