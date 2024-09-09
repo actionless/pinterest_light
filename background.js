@@ -22,7 +22,9 @@
     hostPermissionUrl = "*://*.pinterest.com/pin-builder/*",
     getCountryPrefix = (url) => new URL(url).hostname.split('.')[ZERO],
     pinterestTabsIDs = {},
+
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    //
     doSearch = async (tabId, queryURL) => { /* eslint-disable-line max-lines-per-function */
         debugLogTab(tabId, `Do search for ${queryURL}`);
         try {
@@ -34,18 +36,22 @@
                 },
                 func: async url => { /* eslint-disable-line sort-keys, max-lines-per-function */
 
+                    // content script helpers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                     const
-                    customLog = (...msgs) => { console.log("[PinterestLight]", ...msgs); },
-                    inputId = "scrape-view-website-link",
-                    UPDATE_INTERVAL_MS = 500,
                     ZERO_BROWSER = 0,
+                    UPDATE_INTERVAL_MS = 500,
+                    inputId = "scrape-view-website-link",
+                    submitXpath = '//button[@aria-label="Submit"]',
+                    searchResultSelector = '[data-test-id="image-from-search-container"]',
+                    noResultSelector = '[data-test-id="pinbuilder-pin-draft-input-scrape-grid-error-message"]',
+
+                    customLog = (...msgs) => { console.log("[PinterestLight]", ...msgs); },
                     getBySelector = (selector) => Array.from(document.querySelectorAll(selector)),
 
                     triggerFocus = (element) => {
                         const bubbles = "onfocusin" in element,
                             eventType = "onfocusin" in element ? "focusin" : "focus";
                         let event = null;
-
                         if ("createEvent" in document) {
                             event = document.createEvent("Event");
                             event.initEvent(eventType, bubbles, true);
@@ -53,7 +59,6 @@
                         else if ("Event" in window) {
                             event = new Event(eventType, { bubbles, cancelable: true });
                         }
-
                         element.focus();
                         if (event) { element.dispatchEvent(event); };
                     },
@@ -63,14 +68,12 @@
                                 resolve(document.getElementById(id));
                                 return;
                             }
-
                             const observer = new MutationObserver(_mutations => {
                                 if (document.getElementById(id)) {
                                     observer.disconnect();
                                     resolve(document.getElementById(id));
                                 }
                             });
-
                             observer.observe(document.body, {
                                 childList: true,
                                 subtree: true
@@ -87,14 +90,12 @@
                             resolve(xpath(selector));
                             return;
                         }
-
                         const observer = new MutationObserver(_mutations => {
                             if (xpath(selector)) {
                                 observer.disconnect();
                                 resolve(xpath(selector));
                             }
                         });
-
                         observer.observe(document.body, {
                             childList: true,
                             subtree: true
@@ -102,10 +103,11 @@
                     });
 
 
+                    // content script main part <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                     customLog(`Gonna search for ${url}...`);
 
                     const elm = await waitForElmId(inputId);
-                    await waitForElmXpath('//button[@aria-label="Submit"]');
+                    await waitForElmXpath(submitXpath);
                     customLog("Found", elm);
 
                     triggerFocus(elm);
@@ -121,28 +123,30 @@
                     let intervalId; /* eslint-disable-line */
                     const delayedSetValue = () => {
                         const inputElement = document.getElementById(inputId);
+                        customLog("checker_Before:", inputElement.value);
 
                         inputElement.click();
                         triggerFocus(inputElement);
+                        customLog("checker:", inputElement.value);
 
-                        customLog("checker", inputElement.value);
                         inputElement.value = url;
                         customLog("checker_After:", inputElement.value);
 
                         document.evaluate(
-                            '//button[@aria-label="Submit"]',
+                            submitXpath,
                             document, null, XPathResult.ANY_TYPE, null
                         ).iterateNext().click();
 
-                        if (    getBySelector('[data-test-id="image-from-search-container"]'                         ).length > ZERO_BROWSER) {
+                        if (getBySelector(searchResultSelector).length > ZERO_BROWSER) {
                             customLog("Results loaded - stopping observer.");
                             clearInterval(intervalId);
-                        } else if (getBySelector('[data-test-id="pinbuilder-pin-draft-input-scrape-grid-error-message"]').length > ZERO_BROWSER) {
+                        } else if (getBySelector(noResultSelector).length > ZERO_BROWSER) {
                             customLog("No results found by Pinterest - stopping observer.");
                             clearInterval(intervalId);
                         }
                     };
                     intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
+                    // content script main part end >>>>>>>>>>>>>>>>>>>>>>>>>>>
                 }
             });
         } catch (err) {
@@ -150,11 +154,13 @@
         }
         debugLogTab(tabId, "ALRIGHT");
     };
+    // Content script logic end >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+
+    // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
     let baseURL = pinterestProto + defaultCountryPrefix + pinterestURLTemplate,
         countryChosen = false;
 
-    // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
     const
     handlePinterestPageLoadCompleted = async (tabId) => {
         await doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
@@ -217,6 +223,7 @@
         }
     },
 
+    // Handlers for extension button click: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     requestPermissions = async () => {
         await (browser || chrome).permissions.request(
             {
@@ -264,7 +271,6 @@
             handleNewURL(changeInfo.url);
         }
     };
-
 
     // Actual event listeners: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     chrome.tabs.onActivated.addListener(handleBrowserTabChange);
