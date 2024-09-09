@@ -31,3 +31,9 @@ https://addons.mozilla.org/en-US/firefox/addon/pinterest_light/
 ```sh
 ./build.sh
 ```
+
+### Screenshots
+
+![](https://github.com/actionless/pinterest_light/blob/master/screenshots/step1.png?raw=true)
+
+![](https://github.com/actionless/pinterest_light/blob/master/screenshots/step2.png?raw=true)
