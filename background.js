@@ -32,7 +32,7 @@
                     allFrames: true,
                     tabId
                 },
-                func: url => { /* eslint-disable-line sort-keys, max-lines-per-function */
+                func: async url => { /* eslint-disable-line sort-keys, max-lines-per-function */
 
                     const
                     customLog = (...msgs) => { console.log("[PinterestLight]", ...msgs); },
@@ -40,6 +40,7 @@
                     UPDATE_INTERVAL_MS = 500,
                     ZERO_BROWSER = 0,
                     getBySelector = (selector) => Array.from(document.querySelectorAll(selector)),
+
                     triggerFocus = (element) => {
                         const bubbles = "onfocusin" in element,
                             eventType = "onfocusin" in element ? "focusin" : "focus";
@@ -56,6 +57,7 @@
                         element.focus();
                         if (event) { element.dispatchEvent(event); };
                     },
+
                     waitForElmId = (id) => new Promise(resolve => {
                             if (document.getElementById(id)) {
                                 resolve(document.getElementById(id));
@@ -74,11 +76,13 @@
                                 subtree: true
                             });
                         }),
+
                     xpath = (selector) => document.evaluate(
                         selector,
                         document, null, XPathResult.ANY_TYPE, null
                     ).iterateNext(),
-                     waitForElmXpath = (selector) => new Promise(resolve => {
+
+                    waitForElmXpath = (selector) => new Promise(resolve => {
                         if (xpath(selector)) {
                             resolve(xpath(selector));
                             return;
@@ -97,55 +101,50 @@
                         });
                     });
 
+
                     customLog(`Gonna search for ${url}...`);
 
-                    waitForElmId(inputId).then((elm) => {
-                        waitForElmXpath('//button[@aria-label="Submit"]').then((_submitElm) => { /* eslint-disable-line max-statements */
+                    const elm = await waitForElmId(inputId);
+                    await waitForElmXpath('//button[@aria-label="Submit"]');
+                    customLog("Found", elm);
 
-                            customLog("Found", elm);
+                    triggerFocus(elm);
+                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
+                    elm.click();
+                    customLog("Before:", elm.value);
+                    elm.value = url;
+                    customLog("After:", elm.value);
+                    document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
+                    document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
+                    document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
 
-                            triggerFocus(elm);
+                    let intervalId; /* eslint-disable-line */
+                    const delayedSetValue = () => {
+                        const inputElement = document.getElementById(inputId);
 
-                            document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
-                            elm.click();
-                            customLog("Before:", elm.value);
-                            elm.value = url;
-                            customLog("After:", elm.value);
+                        inputElement.click();
+                        triggerFocus(inputElement);
 
-                            document.getElementById(inputId).dispatchEvent(new Event('input', { bubbles: true }));
-                            document.getElementById(inputId).dispatchEvent(new Event('blur', { bubbles: true }));
-                            document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, keyCode: 13 }));
+                        customLog("checker", inputElement.value);
+                        inputElement.value = url;
+                        customLog("checker_After:", inputElement.value);
 
-                            let intervalId; /* eslint-disable-line */
-                            const delayedSetValue = () => {
-                                const inputElement = document.getElementById(inputId);
+                        document.evaluate(
+                            '//button[@aria-label="Submit"]',
+                            document, null, XPathResult.ANY_TYPE, null
+                        ).iterateNext().click();
 
-                                inputElement.click();
-                                triggerFocus(inputElement);
-
-                                customLog("checker", inputElement.value);
-                                inputElement.value = url;
-                                customLog("checker_After:", inputElement.value);
-
-                                document.evaluate(
-                                    '//button[@aria-label="Submit"]',
-                                    document, null, XPathResult.ANY_TYPE, null
-                                ).iterateNext().click();
-
-                                if (getBySelector('[data-test-id="image-from-search-container"]').length > ZERO_BROWSER) {
-                                    customLog("Results loaded - stopping observer.")
-                                    clearInterval(intervalId);
-                                } else if (getBySelector('[data-test-id="pinbuilder-pin-draft-input-scrape-grid-error-message"]').length > ZERO_BROWSER) {
-                                    customLog("No results found by Pinterest - stopping observer.")
-                                    clearInterval(intervalId);
-                                }
-                            };
-                            intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
-
-                        });
-                    });
+                        if (    getBySelector('[data-test-id="image-from-search-container"]'                         ).length > ZERO_BROWSER) {
+                            customLog("Results loaded - stopping observer.");
+                            clearInterval(intervalId);
+                        } else if (getBySelector('[data-test-id="pinbuilder-pin-draft-input-scrape-grid-error-message"]').length > ZERO_BROWSER) {
+                            customLog("No results found by Pinterest - stopping observer.");
+                            clearInterval(intervalId);
+                        }
+                    };
+                    intervalId = setInterval(delayedSetValue, UPDATE_INTERVAL_MS);
                 }
-            })
+            });
         } catch (err) {
             console.error(`failed to execute script: ${err}`);
         }
@@ -156,7 +155,7 @@
         countryChosen = false;
 
     // Handle redirections to country-based website domain: <<<<<<<<<<<<<<<<<<<
-    const /* eslint-disable-line one-var */
+    const
     handlePinterestPageLoadCompleted = async (tabId) => {
         await doSearch(tabId, pinterestTabsIDs[tabId].searchURL);
         delete pinterestTabsIDs[tabId];
