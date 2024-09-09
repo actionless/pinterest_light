@@ -121,18 +121,6 @@
 
                             customLog("Found", elm);
 
-                            // document.evaluate(
-                            //     "//div[text()='Save from URL']/ancestor::*/button",
-                            //     document, null, XPathResult.ANY_TYPE, null
-                            // ).iterateNext().click();
-                            // elm.click();
-
-                            // Object.getOwnPropertyDescriptor(
-                            //   window.HTMLInputElement.prototype, "value"
-                            // ).set.call(
-                            //         document.getElementById(inputId), queryURL
-                            // );
-
                             triggerFocus(elm);
 
                             document.getElementById(inputId).dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: "a" }));
