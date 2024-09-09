@@ -16,12 +16,12 @@
     logTab = (tabId, ...message) => {
         console.log(`[pinterest_light:${tabId}]`, ...message)
     },
-    defaultCountryPrefix = "www",
-    hostPermissionUrl = "*://*.pinterest.com/pin-builder/*",
     pinterestProto = "https://",
+    defaultCountryPrefix = "www",
     pinterestURLTemplate = ".pinterest.com/pin-builder/?tab=save_from_url",
-    pinterestTabsIDs = {},
+    hostPermissionUrl = "*://*.pinterest.com/pin-builder/*",
     getCountryPrefix = (url) => new URL(url).hostname.split('.')[ZERO],
+    pinterestTabsIDs = {},
     // Content script logic: <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     doSearch = async (tabId, queryURL) => { /* eslint-disable-line max-lines-per-function */
         debugLogTab(tabId, `Do search for ${queryURL}`);
