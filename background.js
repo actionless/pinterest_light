@@ -111,19 +111,21 @@
                     await waitForElmXpath(submitXpath);
                     customLog("Found", elm);
 
+                    customLog("Before_Focus:", elm.value);
                     triggerFocus(elm);
-                    elm.click();
-                    customLog("Before:", elm.value);
+
+                    customLog("Before_Value:", elm.value);
                     elm.value = url;
-                    customLog("After:", elm.value);
+                    customLog("After_Value:", elm.value);
+
                     elm.dispatchEvent(new Event('input', { bubbles: true }));
+                    customLog("After_Input:", elm.value);
 
                     let numTries = 0;
                     for ( ; numTries <= MAX_RETRIES ; numTries += 1) {
                         const inputElement = document.getElementById(inputId);
                         customLog("checker_Before:", inputElement.value);
 
-                        inputElement.click();
                         triggerFocus(inputElement);
                         customLog("checker:", inputElement.value);
 
