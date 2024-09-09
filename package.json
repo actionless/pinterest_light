@@ -1,6 +1,6 @@
 {
   "name": "pinterest_light",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Extremely lightweight unofficial addon for pinning things to Pinterest.",
   "main": "background.js",
   "scripts": {
