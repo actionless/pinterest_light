@@ -34,59 +34,38 @@
                 },
                 func: url => { /* eslint-disable-line sort-keys, max-lines-per-function */
 
-                    const customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); },
-                        inputId = "scrape-view-website-link",
-                        UPDATE_INTERVAL_MS = 500,
-                        ZERO_BROWSER = 0,
-                        getBySelector = (selector) => Array.from(document.querySelectorAll(selector)),
-                        triggerFocus = (element) => {
-                            const bubbles = "onfocusin" in element,
-                                eventType = "onfocusin" in element ? "focusin" : "focus";
-                            let event = null;
+                    const
+                    customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); },
+                    inputId = "scrape-view-website-link",
+                    UPDATE_INTERVAL_MS = 500,
+                    ZERO_BROWSER = 0,
+                    getBySelector = (selector) => Array.from(document.querySelectorAll(selector)),
+                    triggerFocus = (element) => {
+                        const bubbles = "onfocusin" in element,
+                            eventType = "onfocusin" in element ? "focusin" : "focus";
+                        let event = null;
 
-                            if ("createEvent" in document) {
-                                event = document.createEvent("Event");
-                                event.initEvent(eventType, bubbles, true);
-                            }
-                            else if ("Event" in window) {
-                                event = new Event(eventType, { bubbles, cancelable: true });
-                            }
+                        if ("createEvent" in document) {
+                            event = document.createEvent("Event");
+                            event.initEvent(eventType, bubbles, true);
+                        }
+                        else if ("Event" in window) {
+                            event = new Event(eventType, { bubbles, cancelable: true });
+                        }
 
-                            element.focus();
-                            if (event) { element.dispatchEvent(event); };
-                        },
-                        waitForElmId = (id) => new Promise(resolve => {
-                                if (document.getElementById(id)) {
-                                    resolve(document.getElementById(id));
-                                    return;
-                                }
-
-                                const observer = new MutationObserver(_mutations => {
-                                    if (document.getElementById(id)) {
-                                        observer.disconnect();
-                                        resolve(document.getElementById(id));
-                                    }
-                                });
-
-                                observer.observe(document.body, {
-                                    childList: true,
-                                    subtree: true
-                                });
-                            }),
-                        xpath = (selector) => document.evaluate(
-                            selector,
-                            document, null, XPathResult.ANY_TYPE, null
-                        ).iterateNext(),
-                         waitForElmXpath = (selector) => new Promise(resolve => {
-                            if (xpath(selector)) {
-                                resolve(xpath(selector));
+                        element.focus();
+                        if (event) { element.dispatchEvent(event); };
+                    },
+                    waitForElmId = (id) => new Promise(resolve => {
+                            if (document.getElementById(id)) {
+                                resolve(document.getElementById(id));
                                 return;
                             }
 
                             const observer = new MutationObserver(_mutations => {
-                                if (xpath(selector)) {
+                                if (document.getElementById(id)) {
                                     observer.disconnect();
-                                    resolve(xpath(selector));
+                                    resolve(document.getElementById(id));
                                 }
                             });
 
@@ -94,7 +73,29 @@
                                 childList: true,
                                 subtree: true
                             });
+                        }),
+                    xpath = (selector) => document.evaluate(
+                        selector,
+                        document, null, XPathResult.ANY_TYPE, null
+                    ).iterateNext(),
+                     waitForElmXpath = (selector) => new Promise(resolve => {
+                        if (xpath(selector)) {
+                            resolve(xpath(selector));
+                            return;
+                        }
+
+                        const observer = new MutationObserver(_mutations => {
+                            if (xpath(selector)) {
+                                observer.disconnect();
+                                resolve(xpath(selector));
+                            }
                         });
+
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true
+                        });
+                    });
 
                     customLog(`Gonna search for ${url}...`);
 
