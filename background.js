@@ -35,7 +35,7 @@
                 func: url => { /* eslint-disable-line sort-keys, max-lines-per-function */
 
                     const
-                    customLog = (...msgs) => { console.log(`[PinterestLight] ${msgs.join(" ")}`); },
+                    customLog = (...msgs) => { console.log("[PinterestLight]", ...msgs); },
                     inputId = "scrape-view-website-link",
                     UPDATE_INTERVAL_MS = 500,
                     ZERO_BROWSER = 0,
