@@ -8,7 +8,7 @@ build:
 	./build.sh
 
 lint: $(NODE_MODULES)
-	./$(NODE_MODULES)/eslint/bin/eslint.js . background.js
+	./$(NODE_MODULES)/eslint/bin/eslint.js .
 
 node_modules:
 	npm install
