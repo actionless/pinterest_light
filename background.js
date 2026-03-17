@@ -132,7 +132,12 @@
                         inputElement.value = url;
                         customLog("checker_After:", inputElement.value);
 
-                        xpath(submitXpath).click();
+                        const submitButton = xpath(submitXpath);
+                        if (submitButton) {
+                            submitButton.click();
+                        } else {
+                            customLog(`Submit button not found, retrying in ${UPDATE_INTERVAL_MS}ms...`);
+                        }
 
                         if (getBySelector(searchResultSelector).length > 0) {
                             customLog("Results loaded - stopping observer.");
