@@ -132,10 +132,7 @@
                         inputElement.value = url;
                         customLog("checker_After:", inputElement.value);
 
-                        document.evaluate(
-                            submitXpath,
-                            document, null, XPathResult.ANY_TYPE, null
-                        ).iterateNext().click();
+                        xpath(submitXpath).click();
 
                         if (getBySelector(searchResultSelector).length > 0) {
                             customLog("Results loaded - stopping observer.");
